@@ -1,4 +1,5 @@
-package com.scalagen
+package com.scalagen.data
+
 import com.scalagen.data.api.Source
 
 import scala.util.Random
