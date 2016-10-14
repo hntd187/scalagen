@@ -8,7 +8,7 @@ includes the ability to write this data to both Csv and Parquet files.
 
 ### Add the dependency to your project
 ```
-"com.scalagen" %% "scalagen" % "0.0.1" % Test
+"com.scalagen" %% "scalagen" % "0.0.2" % Test
 ```
 
 You then can compose a simple data set like so
