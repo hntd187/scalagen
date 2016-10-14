@@ -1,10 +1,17 @@
 ## Scala Gen
 
+[ ![Download](https://api.bintray.com/packages/hntd187/maven/scalagen/images/download.svg) ](https://bintray.com/hntd187/maven/scalagen/_latestVersion)
+
 Scala gen is a simple library based around being able to generate row based
 test data and easily compose a description of that data set. It also currently
 includes the ability to write this data to both Csv and Parquet files.
 
-You can compose a simple data set like so
+### Add the dependency to your project
+```
+"com.scalagen" %% "scalagen" % "0.0.1" % Test
+```
+
+You then can compose a simple data set like so
 ```scala
 import com.scalagen.data._
 val data = IncrementingSource() | YesNoSource()
