@@ -2,6 +2,8 @@
 
 [ ![Download](https://api.bintray.com/packages/hntd187/maven/scalagen/images/download.svg) ](https://bintray.com/hntd187/maven/scalagen/_latestVersion)
 
+Docs can be found at: https://hntd187.github.io/scalagen/docs/0.0.2/
+
 Scala gen is a simple library based around being able to generate row based
 test data and easily compose a description of that data set. It also currently
 includes the ability to write this data to both Csv and Parquet files.
