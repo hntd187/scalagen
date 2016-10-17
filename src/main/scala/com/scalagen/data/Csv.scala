@@ -10,6 +10,10 @@ import com.scalagen.data.api._
 import com.scalagen.util.Tabulator
 import org.slf4j.{Logger, LoggerFactory}
 
+/**
+  * A writer that writes a CSV file based on options provided
+  * @param sources - Sources for writing lines to the file
+  */
 case class Csv(sources: SourceContainer) extends Writer with Headers[Csv] {
 
   private val logger: Logger  = LoggerFactory.getLogger(getClass)
@@ -18,21 +22,41 @@ case class Csv(sources: SourceContainer) extends Writer with Headers[Csv] {
   private var quoted: Boolean = true
   private var newLine: String = System.lineSeparator()
 
+  /**
+    * What delimiter to use for lines, default is |
+    * @param d new delimiters to use
+    * @return object with attribute set
+    */
   def withDelim(d: String): Csv = {
     delim = d
     this
   }
 
+  /**
+    * What character to use for quoting values, default is "
+    * @param q new quote character to use
+    * @return object with attribute set
+    */
   def withQuote(q: String): Csv = {
     quote = q
     this
   }
 
+  /**
+    * Whether or not to quote values when writing them, default is true
+    * @param q new value to use
+    * @return object with attribute set
+    */
   def withQuoted(q: Boolean): Csv = {
     quoted = q
     this
   }
 
+  /**
+    * What new line character to use for separating lines, default is system new line
+    * @param n new line value to use
+    * @return object with attribute set
+    */
   def withNewLine(n: String): Csv = {
     newLine = n
     this
@@ -43,11 +67,13 @@ case class Csv(sources: SourceContainer) extends Writer with Headers[Csv] {
   private[data] def makeCsvLine: String = {
     val line = StringBuilder.newBuilder
     if (quoted) {
-      makeLine.map(f => f"""\"$f%s\"""").foreach(f => line.append(f).append(delim))
+      val l = makeLine.map(f => s"""$quote$f$quote""").mkString(delim)
+      line.append(l)
     } else {
-      makeLine.foreach(f => line.append(f).append(delim))
+      val l = makeLine.mkString(delim)
+      line.append(l)
     }
-    line.update(line.length - 1, '\n')
+    line.append(newLine)
     line.result()
   }
 
@@ -61,7 +87,7 @@ case class Csv(sources: SourceContainer) extends Writer with Headers[Csv] {
     val i: AtomicInteger                 = new AtomicInteger(1)
 
     if (hasHeader) {
-      val head                  = headers.mkString(delim) + '\n'
+      val head: String          = headers.mkString(delim) + newLine
       val headBytes: ByteBuffer = ByteBuffer.wrap(head.getBytes)
       channel.write(headBytes, position.getAndAdd(headBytes.capacity.toLong))
       i.incrementAndGet()
@@ -77,7 +103,7 @@ case class Csv(sources: SourceContainer) extends Writer with Headers[Csv] {
         lock.release()
       }
     }
-    val lastLine: String   = makeCsvLine.stripSuffix("\n")
+    val lastLine: String   = makeCsvLine.stripSuffix(newLine)
     val buffer: ByteBuffer = ByteBuffer.wrap(lastLine.getBytes)
     channel.write(buffer, position.get)
     channel.close()
@@ -85,6 +111,6 @@ case class Csv(sources: SourceContainer) extends Writer with Headers[Csv] {
 
   def show(n: Int = 10): Unit = Tabulator.print(headers, Seq.fill(n)(makeLine.map(_.toString)))
 
-  override def toString: String = headers.zip(sources.sources).map { case (h, s) => s"$h - $s" }.mkString("\n")
+  override def toString: String = headers.zip(sources.sources).map { case (h, s) => s"$h - $s" }.mkString(newLine)
 
 }

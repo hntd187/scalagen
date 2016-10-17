@@ -4,6 +4,10 @@ import de.vandermeer.asciitable.v2.V2_AsciiTable
 import de.vandermeer.asciitable.v2.render.{V2_AsciiTableRenderer, V2_Width, WidthAbsoluteEven}
 import de.vandermeer.asciitable.v2.themes.{V2_E_TableThemes, V2_TableTheme}
 
+/**
+  * This is a util used to display data in a table, there are a lot of options which can be
+  * set directly on the object. A list of options can be found at https://github.com/vdmeer/asciitable
+  */
 object Tabulator {
 
   private var _width: V2_Width           = new WidthAbsoluteEven(100)

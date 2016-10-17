@@ -1,6 +1,7 @@
 package com.scalagen.data
 
 import java.nio.file.{Files, Path, Paths}
+import java.time.LocalDate
 
 import com.scalagen.data.api.SourceContainer
 import com.scalagen.util.ParquetUtils
@@ -25,7 +26,7 @@ class WriterTestSuite extends FunSpec with Matchers with BeforeAndAfterAll {
   }
 
   val p: Parquet = Parquet {
-    gs | IncrementingSource() | GenderSource() | GaussianSource()
+    gs | IncrementingSource() | GenderSource() | GaussianSource() | DateSource(LocalDate.now()) | BernoulliSource()
   }
 
   def cleanUp(): Unit = {
@@ -79,11 +80,11 @@ class WriterTestSuite extends FunSpec with Matchers with BeforeAndAfterAll {
 
     describe("Csv Line Generators") {
       it("Should generate a valid line") {
-        c.makeCsvLine should fullyMatch regex """^"-?[\d\.]+"\|"-?[\d\.]+"\n$"""
+        c.makeCsvLine should fullyMatch regex s"""^"-?[\\d\\.]+"\\|"-?[\\d\\.]+"${System.lineSeparator}$$"""
       }
       it("Should generate valid line without quotes") {
         c.withQuoted(false)
-        c.makeCsvLine should fullyMatch regex """^-?[\d\.]+\|-?[\d\.]+\n$"""
+        c.makeCsvLine should fullyMatch regex s"""^-?[\\d\\.]+\\|-?[\\d\\.]+${System.lineSeparator}$$"""
       }
     }
     describe("Writing Csv") {
