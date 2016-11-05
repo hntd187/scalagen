@@ -1,13 +1,13 @@
 package com.scalagen.data
 
 import java.nio.ByteBuffer
-import java.nio.channels.{AsynchronousFileChannel, FileLock}
+import java.nio.channels.{AsynchronousFileChannel, CompletionHandler, FileLock}
 import java.nio.file.StandardOpenOption._
 import java.nio.file.{Path, Paths}
 import java.util.concurrent.atomic.{AtomicInteger, AtomicLong}
 
 import com.scalagen.data.api._
-import com.scalagen.util.Tabulator
+import com.scalagen.writers.Row
 import org.slf4j.{Logger, LoggerFactory}
 
 /**
@@ -62,16 +62,24 @@ case class Csv(sources: SourceContainer) extends Writer with Headers[Csv] {
     this
   }
 
-  def makeLine: Seq[Any] = sources.getLine
+  def makeLine: Row = sources.getLine
 
   private[data] def makeCsvLine: String = {
-    val line = StringBuilder.newBuilder
-    if (quoted) {
-      val l = makeLine.map(f => s"""$quote$f$quote""").mkString(delim)
-      line.append(l)
-    } else {
-      val l = makeLine.mkString(delim)
-      line.append(l)
+    val line: StringBuilder = StringBuilder.newBuilder
+    val data: Row           = makeLine
+    val x: Int              = data.length
+    var i: Int              = 0
+    while (i != x) {
+      if (quoted) {
+        line.append(quote)
+        line.append(data.getString(i))
+        line.append(quote)
+        if (i + 1 != x) line.append(delim)
+      } else {
+        line.append(data.getString(i))
+        if (i + 1 != x) line.append(delim)
+      }
+      i += 1
     }
     line.append(newLine)
     line.result()
@@ -80,12 +88,10 @@ case class Csv(sources: SourceContainer) extends Writer with Headers[Csv] {
   def hasHeader = true
 
   def write(s: String, lines: Int): Unit = {
-    // Default is to write a separated file with a header.
     val path: Path                       = Paths.get(s)
     val channel: AsynchronousFileChannel = AsynchronousFileChannel.open(path, TRUNCATE_EXISTING, WRITE, CREATE)
     val position: AtomicLong             = new AtomicLong(0L)
     val i: AtomicInteger                 = new AtomicInteger(1)
-
     if (hasHeader) {
       val head: String          = headers.mkString(delim) + newLine
       val headBytes: ByteBuffer = ByteBuffer.wrap(head.getBytes)
@@ -97,8 +103,7 @@ case class Csv(sources: SourceContainer) extends Writer with Headers[Csv] {
       val buffer: ByteBuffer = ByteBuffer.wrap(line.getBytes)
       val lock: FileLock     = channel.lock().get()
       if (lock.isValid) {
-        val writeOp: Integer = channel.write(buffer, position.getAndAdd(buffer.capacity.toLong)).get()
-        logger.debug(s"Wrote: $writeOp bytes to $s")
+        channel.write(buffer, position.getAndAdd(buffer.capacity.toLong), null, new WriteCompletionHandler(s))
         i.getAndIncrement()
         lock.release()
       }
@@ -109,8 +114,15 @@ case class Csv(sources: SourceContainer) extends Writer with Headers[Csv] {
     channel.close()
   }
 
-  def show(n: Int = 10): Unit = Tabulator.print(headers, Seq.fill(n)(makeLine.map(_.toString)))
+  //def show(n: Int = 10): Unit = Tabulator.print(headers, Seq.fill(n)(makeLine.map(_.toString)))
 
   override def toString: String = headers.zip(sources.sources).map { case (h, s) => s"$h - $s" }.mkString(newLine)
 
+}
+
+protected class WriteCompletionHandler(file: String) extends CompletionHandler[Integer, java.lang.Object] {
+  private val logger: Logger = LoggerFactory.getLogger(getClass)
+
+  override def completed(result: Integer, attachment: java.lang.Object): Unit = logger.debug(s"Wrote: $result bytes to $file")
+  override def failed(exc: Throwable, attachment: java.lang.Object): Unit     = throw exc
 }

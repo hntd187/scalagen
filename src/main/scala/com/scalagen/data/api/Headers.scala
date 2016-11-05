@@ -6,7 +6,7 @@ package com.scalagen.data.api
   */
 trait Headers[I] extends Sources { this: I =>
 
-  protected var headerNames = Array.empty[String]
+  protected var headerNames: Array[String] = Array.empty[String]
 
   /**
     * Include header names with a writer

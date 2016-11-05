@@ -14,8 +14,9 @@ import com.scalagen.data.api.Source
 case class DateSource(start: LocalDate, incrementUnit: Period = Period.ofWeeks(1))(implicit fmt: DateTimeFormatter = Implicits.fmt)
     extends Source[Iterator[LocalDate], String] {
 
-  val source: Iterator[LocalDate] = Stream.iterate[LocalDate](start)(d => d.plus(incrementUnit)).iterator
+  val source: Iterator[LocalDate] = Iterator.iterate[LocalDate](start)(d => d.plus(incrementUnit))
   def sample(): String            = source.next().format(fmt)
+  override def toString: String   = s"${getClass.getSimpleName}(${start.format(fmt)})"
 }
 
 object DateSource {

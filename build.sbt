@@ -19,7 +19,7 @@ lazy val log4j          = "2.7"
 lazy val slf4j          = "1.7.21"
 lazy val hadoop         = "2.7.3"
 lazy val typesafeConfig = "1.3.1"
-lazy val parquet        = "1.8.1"
+lazy val parquet        = "1.9.0"
 lazy val scalaTest      = "3.0.0"
 lazy val breeze         = "0.12"
 lazy val shapeless      = "2.3.2"
@@ -60,5 +60,6 @@ lazy val scalaCompileOptions = Seq(
   "-language:postfixOps",
   "-language:existentials",
   "-language:higherKinds",
-  "-language:implicitConversions"
+  "-language:implicitConversions",
+  "-Xlog-free-terms"
 )

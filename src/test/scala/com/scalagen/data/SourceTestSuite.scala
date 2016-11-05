@@ -1,36 +1,78 @@
 package com.scalagen.data
 
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
+
 import breeze.stats.distributions.{Bernoulli, Gaussian}
 import com.scalagen.data.api.Source
 import org.scalatest._
+import org.slf4j.{Logger, LoggerFactory}
 
-import scala.collection.immutable.StreamIterator
+import scala.reflect.runtime.universe._
+import scala.util.Random
 
 class SourceTestSuite extends FunSpec with Matchers {
+  val logger: Logger = LoggerFactory.getLogger(getClass)
 
-  val gs: GaussianSource  = GaussianSource(1.0, 2.0)
-  val bs: BernoulliSource = BernoulliSource()
-  val ds: DateSource      = DateSource("2015-10-31")
-  val yns: YesNoSource    = YesNoSource()
-  val ges: GenderSource   = GenderSource()
+  val gs: GaussianSource        = GaussianSource(1.0, 2.0)
+  val bs: BernoulliSource       = BernoulliSource()
+  val ds: DateSource            = DateSource(LocalDate.now())
+  val yns: YesNoSource          = YesNoSource()
+  val ges: GenderSource         = GenderSource()
+  val des: DeincrementingSource = DeincrementingSource()
+  val ri: RandomInt             = RandomInt(0, 10, 1)
+  val rd: RandomDouble          = RandomDouble(0.0, 10.0, 1.0)
+  val rc: RandomSource[String]  = RandomSource[String](Seq[String]("one", "two", "three"))
 
-  val sourceList: Seq[Source[_, _]]  = Seq(gs, bs, ds, yns, ges)
-  val expectedSources: Seq[Class[_]] = Seq(classOf[Gaussian], classOf[Bernoulli], classOf[StreamIterator[_]], classOf[Bernoulli], classOf[Bernoulli])
-  val expectedSamples                = Seq(classOf[java.lang.Double], classOf[java.lang.Boolean], classOf[String], classOf[String], classOf[String])
+  val sourceList: Seq[Source[_, _]] = Seq(gs, bs, ds, yns, ges, des, ri, rd, rc)
 
-  for (i <- sourceList.indices) {
-    val source: Source[_, _]     = sourceList(i)
-    val expected: Class[_]       = expectedSources(i)
-    val expectedSample: Class[_] = expectedSamples(i)
-    val classDef: String         = source.getClass.getCanonicalName
+  val expectedSamples: Seq[_root_.scala.reflect.runtime.universe.Type] = Seq(
+    typeOf[Double],
+    typeOf[Boolean],
+    typeOf[String],
+    typeOf[String],
+    typeOf[String],
+    typeOf[Int],
+    typeOf[Int],
+    typeOf[Double],
+    typeOf[String]
+  )
 
-    describe(s"Class Types for: $classDef") {
-      it("Should be the correct source type") {
-        source.source.getClass should equal(expected)
+  val expectedTypes = Seq(
+    typeOf[Gaussian],
+    typeOf[Bernoulli],
+    typeOf[Iterator[LocalDate]],
+    typeOf[Bernoulli],
+    typeOf[Bernoulli],
+    typeOf[Iterator[Int]],
+    typeOf[Random],
+    typeOf[Random],
+    typeOf[Random]
+  )
+  for (i <- expectedTypes.indices) {
+    val source = sourceList(i)
+    describe(s"Check ${source.getClass} types") {
+      it(s"Should match type tag: ${expectedTypes(i)}") {
+        assert(expectedTypes(i) =:= source.S)
       }
-      it("Should be the correct sample type") {
-        source.sample().getClass shouldBe an[expectedSample.type]
+      it(s"Sample type should match: ${expectedSamples(i)}") {
+        assert(expectedSamples(i) =:= source.V)
       }
     }
   }
+
+  describe("Correct source samples") {
+    it("Gaussian should return between 0 and 1"){
+      gs.sample() shouldBe (1.0 +- 6.0)
+    }
+    it("Bernoulli should be True or False"){
+      bs.sample() shouldBe a[java.lang.Boolean]
+      yns.sample() should (be("Yes") or be("No"))
+      ges.sample() should (be("M") or be("F"))
+    }
+    it("Date source should match format"){
+      ds.sample() shouldBe DateTimeFormatter.ISO_DATE.format(LocalDate.now())
+    }
+  }
+
 }

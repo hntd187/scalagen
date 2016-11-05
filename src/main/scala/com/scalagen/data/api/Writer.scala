@@ -2,6 +2,8 @@ package com.scalagen.data.api
 
 import java.io.File
 
+import com.scalagen.writers.Row
+
 /**
   * A trait that allows writers to actually write things.
   */
@@ -11,7 +13,7 @@ trait Writer {
     * Generates a single line for the writer to take
     * @return A sequence of column values to write
     */
-  def makeLine: Seq[Any]
+  def makeLine: Row
 
   /**
     * Whether or not the writer source writes headers

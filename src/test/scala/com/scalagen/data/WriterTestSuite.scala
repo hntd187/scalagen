@@ -6,13 +6,13 @@ import java.time.LocalDate
 import com.scalagen.data.api.SourceContainer
 import com.scalagen.util.ParquetUtils
 import org.scalatest._
-import org.slf4j.LoggerFactory
+import org.slf4j.{Logger, LoggerFactory}
 
 import scala.io._
 
 class WriterTestSuite extends FunSpec with Matchers with BeforeAndAfterAll {
 
-  val logger = LoggerFactory.getLogger(getClass)
+  val logger: Logger = LoggerFactory.getLogger(getClass)
 
   val gs: GaussianSource      = GaussianSource(5.0, 20)
   val emptyGs: GaussianSource = GaussianSource()
@@ -118,10 +118,6 @@ class WriterTestSuite extends FunSpec with Matchers with BeforeAndAfterAll {
       sc shouldBe a[SourceContainer]
       sc.sources should have length 3
       sc.sources.foreach(_ shouldBe a[GaussianSource])
-    }
-    it("Empty should container should be empty?") {
-      SourceContainer().sources shouldBe empty
-      SourceContainer().getLine shouldBe empty
     }
   }
 }

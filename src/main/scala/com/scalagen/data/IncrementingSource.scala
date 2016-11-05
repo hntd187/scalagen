@@ -6,9 +6,10 @@ import com.scalagen.data.api.Source
   * @param start - where to start counting
   * @see [[DeincrementingSource]]
   */
-case class IncrementingSource(start: Int = 1) extends Source[Iterator[Int], Int] {
-  private[data] val source: Iterator[Int] = Stream.from(start).iterator
+case class IncrementingSource(start: Int = 0) extends Source[Iterator[Int], Int] {
+  private[data] val source: Iterator[Int] = Iterator.from(start)
   def sample(): Int                       = source.next
+  override def toString: String           = s"${getClass.getSimpleName}($start)"
 }
 
 /**
@@ -16,7 +17,8 @@ case class IncrementingSource(start: Int = 1) extends Source[Iterator[Int], Int]
   * @param start where to count down from
   * @see [[DeincrementingSource]]
   */
-case class DeincrementingSource(start: Int = 1) extends Source[Iterator[Int], Int] {
-  private[data] val source: Iterator[Int] = Stream.from(start).reverseIterator
+case class DeincrementingSource(start: Int = 0) extends Source[Iterator[Int], Int] {
+  private[data] val source: Iterator[Int] = Iterator.from(start, -1)
   def sample(): Int                       = source.next
+  override def toString: String           = s"${getClass.getSimpleName}($start)"
 }

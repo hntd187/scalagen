@@ -1,11 +1,11 @@
 package com.scalagen.data
 
 import java.io.File
-import java.time.LocalDate
 import java.util.HashMap
 
 import com.scalagen.data.api.{Headers, SourceContainer, Writer}
 import com.scalagen.util.ParquetUtils
+import com.scalagen.writers.Row
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.Path
 import org.apache.parquet.example.data.Group
@@ -25,10 +25,8 @@ import org.slf4j.{Logger, LoggerFactory}
   * @param sources The sources to write
   */
 case class Parquet(sources: SourceContainer) extends Writer with Headers[Parquet] {
-  private val logger: Logger = LoggerFactory.getLogger(getClass)
 
-  logger.debug(s"Creating Parquet Source with Sources: $sources")
-
+  private val logger: Logger                         = LoggerFactory.getLogger(getClass)
   private var metadata: HashMap[String, String]      = new HashMap[String, String]()
   private var pageSize: Int                          = ParquetWriter.DEFAULT_PAGE_SIZE
   private var blockSize: Int                         = ParquetWriter.DEFAULT_BLOCK_SIZE
@@ -121,7 +119,7 @@ case class Parquet(sources: SourceContainer) extends Writer with Headers[Parquet
   }
   def withValidation(): Parquet = withValidation(true)
 
-  def makeLine: IndexedSeq[Any] = sources.sources.map(s => s.sample()).toIndexedSeq
+  def makeLine: Row = Row(sources.sources.map(s => s.sample()))
 
   def hasHeader: Boolean = true
 
@@ -155,17 +153,20 @@ case class Parquet(sources: SourceContainer) extends Writer with Headers[Parquet
     var i: Int                = 0
     while (i < lines) {
       val group: Group = g.newGroup()
-      makeLine.zip(headers).foreach {
-        case (v, h) =>
-          v match {
-            case v: Double  => group.add(h, v)
-            case v: Int     => group.add(h, v)
-            case v: Long    => group.add(h, v)
-            case v: Boolean => group.add(h, v)
-            case v: String  => group.add(h, v)
-            // Don't know what type it is, so convert to string
-            case _          => group.add(h, v.toString)
-          }
+      val data: Row    = makeLine
+      val dLength: Int = data.length
+      var x: Int       = 0
+      while (x < dLength) {
+        data(x) match {
+          case v: Double  => group.add(headers(x), v)
+          case v: Int     => group.add(headers(x), v)
+          case v: Long    => group.add(headers(x), v)
+          case v: Boolean => group.add(headers(x), v)
+          case v: String  => group.add(headers(x), v)
+          case v: Any     => group.add(headers(x), v.toString)
+          case _          => throw new IllegalStateException(s"Unknown type for ${headers(x)} - ${data(x)}")
+        }
+        x += 1
       }
       logger.debug(s"Written: ${parquetWriter.getDataSize} total bytes")
       parquetWriter.write(group)
